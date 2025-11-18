@@ -1,0 +1,49 @@
+name: qad_env
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  # Core Python
+  - python=3.8
+  
+  # Pythia8 for event generation (conda-forge only)
+  - pythia8=8.311
+  
+  # Optional: FastJet for jet reconstruction
+  # - fastjet
+  
+  # Core scientific computing (via pip for version control)
+  - pip
+  - pip:
+    # Data handling
+    - numpy>=1.21,<1.25
+    - scipy>=1.9,<1.11
+    - pandas==1.4.0
+    - h5py>=3.6.0
+    
+    # Machine Learning
+    - scikit-learn==1.1.1
+    - tensorflow>=2.6,<2.14
+    - torch>=1.9.0,<2.5
+    
+    # Quantum Computing
+    - qiskit==0.36.2
+    - qiskit-terra==0.20.2
+    - qiskit-aer>=0.10.4
+    - qiskit-ibmq-provider==0.19.1
+    - qiskit-ignis==0.7.1
+    - qiskit-machine-learning==0.4.0
+    - qibo==0.1.10
+    
+    # Visualization
+    - matplotlib>=3.5,<3.8
+    - mplhep>=0.3.26
+    - mplhep-data==0.0.3
+    
+    # Utilities
+    - joblib>=1.2.0
+    - pyyaml>=6.0
+    - pylatexenc==2.10
+    
+    # Triple-e dependency
+    - git+https://github.com/vbelis/triple_e.git@master
