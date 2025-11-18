@@ -1,0 +1,55 @@
+# Example configuration for Pythia-8 simulation
+# This file demonstrates how to configure different physics processes
+
+# Physics process configuration
+physics_process:
+  process: "pp -> jj"  # proton-proton to dijet production
+  energy: 13000.0      # Center-of-mass energy in GeV (LHC Run 2)
+  parameters:
+    # Additional Pythia-8 parameters
+    "PhaseSpace:pTHatMin": 50.0    # Minimum pT for hard process
+    "PhaseSpace:pTHatMax": 2000.0  # Maximum pT for hard process
+    "PartonLevel:ISR": "on"        # Initial state radiation
+    "PartonLevel:FSR": "on"        # Final state radiation
+    "PartonLevel:MPI": "on"        # Multiple parton interactions
+
+# Simulation settings
+simulation:
+  n_events: 10000      # Number of events to generate
+  output_file: "data/pythia_events.h5"
+  random_seed: 12345   # Random seed for reproducibility
+  debug_level: 0       # Pythia debug level (0-10)
+
+# Jet reconstruction settings
+jets:
+  algorithm: "antikt"  # Jet algorithm (antikt, kt, cambridge)
+  r_parameter: 0.4     # Jet radius parameter
+  pt_min: 20.0         # Minimum jet pT in GeV
+  eta_max: 2.5         # Maximum |eta| for jets
+
+# Alternative configurations for different processes:
+
+# Top quark pair production
+# physics_process:
+#   process: "pp -> ttbar"
+#   energy: 13000.0
+#   parameters:
+#     "Top:gg2ttbar": "on"
+#     "Top:qqbar2ttbar": "on"
+#     "PhaseSpace:pTHatMin": 100.0
+
+# W+W- production
+# physics_process:
+#   process: "pp -> WW"
+#   energy: 13000.0
+#   parameters:
+#     "WeakSingleBoson:ffbar2W": "on"
+#     "PhaseSpace:pTHatMin": 50.0
+
+# Z boson production
+# physics_process:
+#   process: "pp -> Z"
+#   energy: 13000.0
+#   parameters:
+#     "WeakSingleBoson:ffbar2gmZ": "on"
+#     "PhaseSpace:pTHatMin": 50.0
