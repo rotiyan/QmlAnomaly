@@ -6,11 +6,12 @@ long_description = (this_directory / "README.md").read_text()
 setup(
     name="qad",
     version="1.0.4",
-    description="Quantum anomaly detection in the latent space of proton collision events",
+    description="Quantum anomaly detection in the latent space of proton collision events (Fork with enhancements)",
     long_description = long_description,
     long_description_content_type="text/markdown",
-    url="https://latent-ad-qml.readthedocs.io/en/latest/",
-    author="Vasilis Belis, Ema Puljak, Kinga Anna Wozniak",
+    url="https://github.com/rotiyan/QmlAnomaly",
+    author="Vasilis Belis, Ema Puljak, Kinga Anna Wozniak (original authors)",
+    maintainer="rotiyan (fork maintainer)",
     packages=find_packages(exclude=["scripts"]),
     classifiers=[
         "Programming Language :: Python :: 3",
