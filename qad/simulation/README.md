@@ -1,15 +1,22 @@
 # Particle Physics Simulation Module
 
-This module provides a complete pipeline for generating particle physics events and compressing them using variational autoencoders for quantum machine learning applications.
+This module provides a complete pipeline for generating particle physics events using **Pythia8** and compressing them using variational autoencoders for quantum machine learning applications.
 
 ## Features
 
+- **Pythia8 Integration**: Full integration with Pythia8 event generator
 - **Multiple Physics Processes**: Dijet production, Z+jets, and custom processes
-- **Realistic Event Generation**: Sophisticated physics simulation with proper kinematics
+- **Realistic Event Generation**: Production-grade physics simulation with proper kinematics
 - **Autoencoder Integration**: Seamless compression to latent space
-- **Quantum ML Ready**: Compressed representations suitable for quantum algorithms
+- **Quantum ML Ready**: Compressed representations compatible with quantum anomaly detection algorithms
 - **Easy Configuration**: YAML-based configuration system
 - **Command Line Interface**: Simple CLI for running simulations
+
+## Requirements
+
+- Pythia8 with Python bindings (installed via conda)
+- TensorFlow or PyTorch for autoencoder
+- FastJet (optional, for jet reconstruction)
 
 ## Quick Start
 
@@ -60,14 +67,15 @@ python -m qad.simulation.run_pipeline --config dijet_config.yaml
 ### 3. Python API
 
 ```python
-from qad.simulation import SimulationConfig, EventDataProcessor
+from qad.simulation import PythiaEventGenerator, SimulationConfig, EventDataProcessor
 from qad.autoencoder.autoencoder import ParticleAutoencoder
 
 # Load configuration
 config = SimulationConfig("config.yaml")
 
-# Generate events (using mock data if Pythia8 not available)
-particle_data, jet_data = generate_mock_dijet_events(100)
+# Generate events with Pythia8
+generator = PythiaEventGenerator(config)
+particle_data, jet_data = generator.generate_events()
 
 # Process data
 processor = EventDataProcessor()
@@ -213,14 +221,36 @@ with h5py.File('output/processed_events.h5', 'r') as f:
 # Each row is a 6D latent representation ready for quantum circuits
 ```
 
+## Installation
+
+### Install Pythia8
+
+```bash
+# Activate your conda environment
+conda activate qad_env
+
+# Install Pythia8 from conda-forge
+conda install -c conda-forge pythia8
+
+# Optional: Install FastJet for better jet reconstruction
+conda install -c conda-forge fastjet
+```
+
+### Verify Installation
+
+```bash
+python -c "import pythia8; print('Pythia8 installed successfully')"
+```
+
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Import Errors**: Ensure all dependencies are installed
-2. **Memory Issues**: Reduce `n_events` for large datasets
-3. **CUDA Errors**: The code will fall back to CPU if GPU is not available
-4. **File Not Found**: Check that output directory exists and is writable
+1. **Pythia8 Not Found**: Install with `conda install -c conda-forge pythia8`
+2. **Python Version Conflicts**: Pythia8 requires Python 3.8-3.11
+3. **Memory Issues**: Reduce `n_events` for large datasets
+4. **CUDA Errors**: The code will fall back to CPU if GPU is not available
+5. **File Not Found**: Check that output directory exists and is writable
 
 ### Debug Mode
 

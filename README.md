@@ -1,103 +1,98 @@
-# Latent Adaptive Quantum Machine Learning (QAD)
+# Quantum Anomaly Detection in the Latent Space of Proton Collision Events
 
-> **⚠️ Attribution Notice**: This is a fork with enhancements of the original work by **Vasilis Belis, Kinga Anna Woźniak, Ema Puljak, and collaborators**. The original research and codebase were published in *Communications Physics* (2024). This repository contains improvements to code organization, documentation, and usability while maintaining full attribution to the original authors.
+> **⚠️ Attribution Notice**: This is a fork with enhancements of the original work by **Vasilis Belis, Kinga Anna Woźniak, Ema Puljak, and collaborators**. The original research and codebase were published in *Communications Physics* (2024).
 >
 > 📄 **Original Paper**: [Quantum anomaly detection in the latent space of proton collision events at the LHC](https://www.nature.com/articles/s42005-024-01811-6)  
 > 🔗 **Original Repository**: [vbelis/latent-ad-qml](https://github.com/vbelis/latent-ad-qml)
 
 ## Overview
 
-This package implements a complete pipeline for:
-1. **Particle Physics Simulation**: Generate realistic proton-proton collision events
-2. **Data Compression**: Use variational autoencoders to compress events to latent space
-3. **Quantum ML**: Apply quantum machine learning algorithms to detect anomalies
-4. **Analysis Tools**: Comprehensive analysis and visualization tools
+This repository implements a complete pipeline for quantum machine learning-based anomaly detection in high-energy physics:
 
-The figure below shows the quantum-classical pipeline for detecting anomalous new-physics events in proton collisions at the LHC.
+1. **Event Generation**: Use Pythia8 to generate realistic proton-proton collision events
+2. **Compression**: Train autoencoders to compress events to 6D latent space (50x compression)
+3. **Quantum ML**: Apply quantum kernel methods for anomaly detection
+4. **Analysis**: Comprehensive visualization and statistical tools
 
 ![Pipeline](docs/Pipeline_QML.png)
 
 ## Key Features
 
-- **Multiple Physics Processes**: Dijet production, Z+jets, top quark pairs, and more
-- **Realistic Event Generation**: Sophisticated physics simulation with proper kinematics
-- **Autoencoder Compression**: 50x compression while preserving physics characteristics
-- **Quantum ML Integration**: Compressed representations ready for quantum algorithms
-- **Easy-to-Use Interface**: Simple command-line tools and Python API
-- **Comprehensive Documentation**: Detailed guides and examples
+- ✅ **Real Pythia8 Integration**: Generate physics events at 13 TeV
+- ✅ **Autoencoder Compression**: 50x compression while preserving physics
+- ✅ **Quantum Algorithms**: One-class QSVM, quantum k-medians, quantum k-means
+- ✅ **Easy Installation**: Single command conda environment setup
+- ✅ **Production Ready**: Tested and documented pipeline
 
 ## Installation
 
-### Prerequisites
-
-- Python 3.8 or higher
-- pip package manager
-
-### Standard Installation
+### Using Conda (Recommended)
 
 ```bash
-# Clone this repository
+# Clone repository
 git clone https://github.com/rotiyan/QmlAnomaly.git
 cd QmlAnomaly
 
-# Install the package
-pip install .
+# Create environment from file (includes Pythia8)
+conda env create -f environment.yaml
+
+# Activate environment
+conda activate qad_env
+
+# Verify installation
+python -c "import pythia8; print('✓ Pythia8 installed')"
+python -c "import qiskit; print('✓ Qiskit installed')"
 ```
 
-**Note**: To access the original repository, use:
-```bash
-git clone https://github.com/vbelis/latent-ad-qml.git
-```
+The `environment.yaml` includes all dependencies:
+- **Pythia8 8.311** (event generation)
+- **TensorFlow & PyTorch** (autoencoders)
+- **Qiskit 0.36.2** (quantum computing)
+- **Scientific stack** (numpy, scipy, pandas, h5py)
 
-### Development Install
+### Alternative: pip install
+
+If you don't need Pythia8:
 
 ```bash
-# Clone and install in development mode
-git clone https://github.com/rotiyan/QmlAnomaly.git
-cd QmlAnomaly
 pip install -e .
 ```
 
-### Dependencies
+## Complete Pipeline: Event Generation → Quantum Anomaly Detection
 
-The package requires several dependencies that will be installed automatically:
-
-- **Core**: numpy, scipy, pandas, h5py, pyyaml
-- **ML**: scikit-learn, tensorflow, torch
-- **Quantum**: qiskit, qibo
-- **Visualization**: matplotlib, mplhep
-- **Physics**: Custom simulation modules
-
-## Quick Start
-
-### 1. Generate and Compress Events
-
-Generate dijet events and compress them to latent space:
+### Step 1: Generate Signal Events
 
 ```bash
-# Generate 100 dijet events
-python -m qad.simulation.run_pipeline --process dijet --n-events 100
+conda activate qad_env
 
-# Generate 100 Z+jets events
-python -m qad.simulation.run_pipeline --process zjets --n-events 100
+# Generate 1000 QCD dijet events (signal)
+python generate_and_compress_events.py \
+    --process dijet \
+    --n-events 1000 \
+    --latent-dim 6 \
+    --epochs 100 \
+    --output-dir output/signal
 ```
 
-### 2. Use Configuration Files
+**Output:**
+- `output/signal/raw_events.h5` - Raw Pythia8 data
+- `output/signal/events_for_quantum_ml.h5` - **Compressed events for quantum algorithms**
+- `output/signal/autoencoder_weights.h5` - Trained model
 
-Create a configuration file for custom settings:
+### Step 2: Generate Background Events
 
+Create `background_config.yaml`:
 ```yaml
-# my_config.yaml
 physics_process:
   process: "pp -> jj"
   energy: 13000.0
   parameters:
-    "PhaseSpace:pTHatMin": 50.0
+    "PhaseSpace:pTHatMin": 100.0  # Different pT range
+    "PhaseSpace:pTHatMax": 1000.0
 
 simulation:
   n_events: 1000
-  output_file: "data/my_events.h5"
-  random_seed: 12345
+  random_seed: 54321
 
 jets:
   algorithm: "antikt"
@@ -106,151 +101,229 @@ jets:
   eta_max: 2.5
 ```
 
-Run with configuration:
-
 ```bash
-python -m qad.simulation.run_pipeline --config my_config.yaml
+python generate_and_compress_events.py \
+    --config background_config.yaml \
+    --output-dir output/background
 ```
 
-### 3. Python API
+### Step 3: Train Quantum Anomaly Detector
+
+```bash
+# Train one-class quantum SVM
+python scripts/kernel_machines/train_one_class_qsvm.py \
+    --train-file output/signal/events_for_quantum_ml.h5 \
+    --test-file output/background/events_for_quantum_ml.h5 \
+    --nqubits 6 \
+    --feature-map ZZFeatureMap \
+    --reps 2 \
+    --backend qasm_simulator \
+    --nu-param 0.05
+```
+
+### Step 4: Visualize Results
+
+```bash
+python examples/analysis/visualize_results.py \
+    --signal-file output/signal/events_for_quantum_ml.h5 \
+    --background-file output/background/events_for_quantum_ml.h5
+```
+
+## Configuration Files
+
+Example configuration for dijet production:
+
+```yaml
+# dijet_config.yaml
+physics_process:
+  process: "pp -> jj"
+  energy: 13000.0
+  parameters:
+    "PhaseSpace:pTHatMin": 50.0
+    "PhaseSpace:pTHatMax": 2000.0
+    "PartonLevel:ISR": "on"
+    "PartonLevel:FSR": "on"
+    "PartonLevel:MPI": "on"
+
+simulation:
+  n_events: 1000
+  output_file: "output/raw_events.h5"
+  random_seed: 12345
+  debug_level: 1
+
+jets:
+  algorithm: "antikt"
+  r_parameter: 0.4
+  pt_min: 20.0
+  eta_max: 2.5
+```
+
+Run with:
+```bash
+python generate_and_compress_events.py --config dijet_config.yaml
+```
+
+## Python API
 
 ```python
-from qad.simulation import SimulationConfig, EventDataProcessor
-import numpy as np
+from qad.simulation import PythiaEventGenerator, SimulationConfig
+from qad.autoencoder.autoencoder import ParticleAutoencoder
 
 # Generate events
-particle_data, jet_data = generate_mock_dijet_events(100)
+config = SimulationConfig("dijet_config.yaml")
+generator = PythiaEventGenerator(config)
+particle_data, jet_data = generator.generate_events()
 
-# Process data
-processor = EventDataProcessor()
-processed_particles = processor.preprocess_particles(particle_data)
+# Train autoencoder
+autoencoder = ParticleAutoencoder(input_shape=(100, 3), latent_dim=6)
+# ... training code ...
 
-# Train autoencoder and encode to latent space
-# ... (see examples for complete code)
+# Encode to latent space
+latent_data = autoencoder.encoder.predict(processed_particles)
+```
 
-# Load latent data for quantum ML
-with h5py.File('output/processed_events.h5', 'r') as f:
-    latent_data = f['latent_data'][:]
-    # latent_data shape: (n_events, 6)
-    # Ready for quantum algorithms!
+## Repository Structure
+
+```
+latent-ad-qml/
+├── environment.yaml              # Conda environment with all dependencies
+├── generate_and_compress_events.py  # Main pipeline script
+├── qad/
+│   ├── simulation/
+│   │   ├── pythia_generator.py   # Pythia8 integration
+│   │   ├── config_parser.py      # Configuration handling
+│   │   └── data_processor.py     # Data preprocessing
+│   ├── autoencoder/               # Compression models
+│   └── algorithms/
+│       ├── kernel_machines/       # Quantum SVM
+│       ├── kmeans/                # Quantum k-means
+│       └── kmedians/              # Quantum k-medians
+├── scripts/                       # Training scripts
+│   ├── kernel_machines/
+│   ├── kmeans/
+│   └── kmedians/
+└── examples/
+    ├── simulation/                # Example configs
+    └── analysis/                  # Visualization tools
+```
+
+## Data Format
+
+### Quantum ML Format
+
+The pipeline outputs data in the format expected by quantum algorithms:
+
+```python
+import h5py
+
+with h5py.File('output/events_for_quantum_ml.h5', 'r') as f:
+    latent_space = f['latent_space'][:]  # Shape: (n_events, 2, latent_dim)
+    jet_data = f['jet_data'][:]          # Shape: (n_events, 10, 4)
+    
+    # Metadata
+    print(f"Events: {f.attrs['n_events']}")
+    print(f"Latent dim: {f.attrs['latent_dim']}")
+    print(f"Process: {f.attrs['process']}")
+```
+
+### Pipeline Flow
+
+```
+Pythia8 (pp → jj)
+    ↓
+Raw Events (100 particles × 3 features)
+    ↓
+Preprocessing (log pT, normalize η, φ)
+    ↓
+Autoencoder (300D → 6D latent space)
+    ↓
+Quantum Format (n_events, 2, 6)
+    ↓
+Quantum Algorithms (QSVM, k-medians, etc.)
+```
+
+## Available Quantum Algorithms
+
+### 1. One-Class Quantum SVM
+
+Detects anomalies using quantum kernels:
+
+```bash
+python scripts/kernel_machines/train_one_class_qsvm.py \
+    --train-file data/signal.h5 \
+    --nqubits 6 \
+    --feature-map ZZFeatureMap \
+    --backend qasm_simulator
+```
+
+### 2. Quantum K-Medians
+
+Clustering in latent space:
+
+```bash
+python scripts/kmedians/run_qkmedians.py \
+    --data-file data/events.h5 \
+    --n-clusters 2 \
+    --backend aer_simulator
+```
+
+### 3. Quantum K-Means
+
+Alternative clustering approach:
+
+```bash
+python scripts/kmeans/run_qkmeans.py \
+    --data-file data/events.h5 \
+    --n-clusters 2
 ```
 
 ## Supported Physics Processes
 
-| Process | Description | Command |
-|---------|-------------|---------|
-| **Dijet** | pp → jj | `--process dijet` |
-| **Z+jets** | pp → Z+jets | `--process zjets` |
-| **Custom** | User-defined | `--config custom.yaml` |
+- **QCD Dijet** (pp → jj): Dominant LHC background
+- **Z+jets** (pp → Z+jets): Electroweak process
+- **Custom processes**: Define via Pythia8 configuration
 
-## Data Format
+## Performance
 
-### Input Data
-- **Particle Data**: `(n_events, 100, 3)` with `[pT, η, φ]` coordinates
-- **Jet Data**: `(n_events, 10, 4)` with `[pT, η, φ, mass]` coordinates
-
-### Latent Space
-- **Shape**: `(n_events, latent_dim)` where `latent_dim=6` by default
-- **Compression**: 50x reduction (30000 → 600 values)
-- **Usage**: Ready for quantum ML algorithms
-
-## Examples
-
-### Example 1: Basic Dijet Simulation
-
-```bash
-# Generate 100 dijet events
-python -m qad.simulation.run_pipeline --process dijet --n-events 100 --output-dir dijet_results
-```
-
-### Example 2: Z+jets with Custom Settings
-
-```bash
-# Generate 200 Z+jets events with 8D latent space
-python -m qad.simulation.run_pipeline --process zjets --n-events 200 --latent-dim 8 --epochs 150
-```
-
-### Example 3: Using Configuration File
-
-```bash
-# Use custom configuration
-python -m qad.simulation.run_pipeline --config examples/simulation/dijet_10_events.yaml --verbose
-```
-
-## Output Files
-
-The pipeline generates several output files:
-
-- **`raw_events.h5`**: Raw particle and jet data
-- **`processed_events.h5`**: Preprocessed data with latent representations
-- **`autoencoder.pth`**: Trained PyTorch model weights
-- **`simulation.log`**: Detailed execution log
-
-## Integration with Quantum ML
-
-The generated latent representations are ready for quantum machine learning:
-
-```python
-import h5py
-import numpy as np
-
-# Load latent data
-with h5py.File('output/processed_events.h5', 'r') as f:
-    latent_data = f['latent_data'][:]
-
-# Use with quantum algorithms
-# latent_data shape: (n_events, latent_dim)
-# Each row is a 6D latent representation ready for quantum circuits
-```
-
-## Documentation
-
-- **API Reference**: [Read the Docs](https://latent-ad-qml.readthedocs.io/en/latest/)
-- **Examples**: See `examples/` directory
-- **Simulation Module**: See `qad/simulation/README.md`
-
-## Examples Directory
-
-The `examples/` directory contains:
-
-- **`simulation/`**: Complete simulation examples
-  - `run_pytorch_chain.py`: PyTorch-based pipeline
-  - `zjets_generator.py`: Z+jets event generator
-  - `dijet_10_events.yaml`: Dijet configuration
-  - `zjets_config.yaml`: Z+jets configuration
-
-- **`analysis/`**: Analysis and visualization tools
-  - `visualize_results.py`: Result visualization
-  - `verify_results.py`: Result verification
-  - `PIPELINE_SUMMARY.md`: Detailed analysis summary
-
-## Performance Tips
-
-1. **Use GPU**: Install PyTorch with CUDA support for faster training
-2. **Batch Size**: Adjust batch size based on available memory
-3. **Epochs**: More epochs may improve reconstruction quality
-4. **Latent Dimension**: Higher dimensions may capture more details
+| Stage | Events | Time | Output |
+|-------|--------|------|--------|
+| Pythia8 Generation | 1000 | ~45s | raw_events.h5 |
+| Autoencoder Training | 1000 | ~15s | 6D latent |
+| Quantum QSVM | 1000 | varies | predictions |
 
 ## Troubleshooting
 
-### Common Issues
+### Low Event Acceptance
 
-1. **Import Errors**: Ensure all dependencies are installed
-2. **Memory Issues**: Reduce `n_events` for large datasets
-3. **CUDA Errors**: The code will fall back to CPU if GPU is not available
-4. **File Not Found**: Check that output directory exists and is writable
+If Pythia8 generates few accepted events:
 
-### Debug Mode
+```yaml
+# Relax cuts in configuration
+jets:
+  pt_min: 15.0    # Lower from 20.0
+  eta_max: 3.0    # Increase from 2.5
+```
 
-Enable verbose logging for debugging:
+### Autoencoder Not Converging
 
 ```bash
-python -m qad.simulation.run_pipeline --process dijet --verbose
+# Increase training
+python generate_and_compress_events.py --epochs 200
+
+# Or increase latent dimension
+python generate_and_compress_events.py --latent-dim 8
+```
+
+### Memory Issues
+
+```bash
+# Generate in smaller batches
+python generate_and_compress_events.py --n-events 500
 ```
 
 ## Citation
 
-**Important**: If you use this package in your research, please cite the **original authors' work**:
+If you use this code in your research, please cite:
 
 ```bibtex
 @article{Belis_2024,
@@ -258,28 +331,22 @@ python -m qad.simulation.run_pipeline --process dijet --verbose
     volume={7},
     journal={Communications Physics},
     author={Belis, Vasilis and Woźniak, Kinga Anna and Puljak, Ema and others},
-    year={2024},
-    doi={10.1038/s42005-024-01811-6},
-    url={https://www.nature.com/articles/s42005-024-01811-6}
+    year={2024}
 }
 ```
 
-**All scientific credit belongs to the original authors.** This repository contains organizational and documentation improvements to make the codebase more accessible.
+## Documentation
+
+- **`qad/simulation/README.md`**: Simulation module API
+- **`examples/simulation/`**: Example configuration files
+- **`examples/analysis/`**: Analysis and visualization examples
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - see LICENSE file for details.
 
-## Contributing
+## Support
 
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## Acknowledgments
-
-**Original Research**: The core research and algorithms in this package were developed by Vasilis Belis, Kinga Anna Woźniak, Ema Puljak, and collaborators. Their work was supported by the European Research Council (ERC) under the European Union's Horizon 2020 research and innovation programme.
-
-**This Fork**: This repository contains organizational improvements, enhanced documentation, and usability enhancements to make the original codebase more accessible to users and researchers.
-
-## Contact
-
-For questions and support, please open an issue on GitHub or contact the maintainers.
+- **Issues**: [GitHub Issues](https://github.com/rotiyan/QmlAnomaly/issues)
+- **Original Repository**: [vbelis/latent-ad-qml](https://github.com/vbelis/latent-ad-qml)
+- **Paper**: [Communications Physics 7, 1 (2024)](https://www.nature.com/articles/s42005-024-01811-6)

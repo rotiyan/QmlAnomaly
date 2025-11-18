@@ -160,74 +160,7 @@ def train_autoencoder(particle_data, latent_dim=6, epochs=100):
     return model
 
 
-def generate_mock_dijet_events(n_events=100):
-    """Generate mock dijet events for demonstration."""
-    logger = logging.getLogger(__name__)
-    logger.info(f"Generating {n_events} mock dijet events...")
-    
-    particle_events = []
-    jet_events = []
-    
-    for i in range(n_events):
-        # Generate mock particle data for dijet events
-        n_particles = np.random.randint(20, 80)
-        
-        # Create two main jets
-        jet1_pt = np.random.exponential(100) + 50
-        jet1_eta = np.random.uniform(-2.5, 2.5)
-        jet1_phi = np.random.uniform(-np.pi, np.pi)
-        
-        jet2_pt = np.random.exponential(80) + 40
-        jet2_eta = np.random.uniform(-2.5, 2.5)
-        jet2_phi = jet1_phi + np.pi + np.random.normal(0, 0.5)
-        
-        # Generate particles around jets
-        particles = []
-        for j in range(n_particles):
-            if j < n_particles // 2:
-                pt = np.random.exponential(jet1_pt / 10) + 5
-                eta = jet1_eta + np.random.normal(0, 0.3)
-                phi = jet1_phi + np.random.normal(0, 0.3)
-            else:
-                pt = np.random.exponential(jet2_pt / 10) + 5
-                eta = jet2_eta + np.random.normal(0, 0.3)
-                phi = jet2_phi + np.random.normal(0, 0.3)
-            
-            if pt > 1.0 and abs(eta) < 2.5:
-                particles.append([pt, eta, phi])
-        
-        # Pad or truncate to exactly 100 particles
-        if len(particles) < 100:
-            particles.extend([[0.0, 0.0, 0.0]] * (100 - len(particles)))
-        else:
-            particles.sort(key=lambda x: x[0], reverse=True)
-            particles = particles[:100]
-        
-        particle_events.append(particles)
-        
-        # Generate jet data
-        jets = [
-            [jet1_pt, jet1_eta, jet1_phi, jet1_pt * 0.1],
-            [jet2_pt, jet2_eta, jet2_phi, jet2_pt * 0.1],
-        ]
-        
-        # Add additional jets
-        for _ in range(8):
-            pt = np.random.exponential(20) + 10
-            if pt > 20:
-                eta = np.random.uniform(-2.5, 2.5)
-                phi = np.random.uniform(-np.pi, np.pi)
-                mass = pt * 0.1
-                jets.append([pt, eta, phi, mass])
-            else:
-                jets.append([0.0, 0.0, 0.0, 0.0])
-        
-        while len(jets) < 10:
-            jets.append([0.0, 0.0, 0.0, 0.0])
-        
-        jet_events.append(jets[:10])
-    
-    return np.array(particle_events), np.array(jet_events)
+# Mock generation removed - use PythiaEventGenerator from qad.simulation
 
 
 def main():
@@ -278,42 +211,63 @@ Examples:
         output_dir = Path(args.output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
         
-        # Generate events
+        # Generate events using Pythia8
+        from qad.simulation import PythiaEventGenerator
+        
         if args.config:
             # Use configuration file
             logger.info(f"Loading configuration from {args.config}")
             config = SimulationConfig(args.config)
-            
-            if config.physics_process.process == "pp -> jj":
-                particle_data, jet_data = generate_mock_dijet_events(config.simulation.n_events)
-            elif "zjets" in config.physics_process.process.lower() and ZJETS_AVAILABLE:
-                generator = ZJetsEventGenerator(args.config)
-                particle_data, jet_data = generator.generate_events()
-            else:
-                raise ValueError(f"Unsupported process: {config.physics_process.process}")
         else:
-            # Use command line arguments
+            # Create config from command line arguments
             if args.process == 'dijet':
-                particle_data, jet_data = generate_mock_dijet_events(args.n_events)
+                config_data = {
+                    'physics_process': {
+                        'process': 'pp -> jj',
+                        'energy': 13000.0,
+                        'parameters': {
+                            'PhaseSpace:pTHatMin': 50.0,
+                            'PhaseSpace:pTHatMax': 2000.0,
+                            'PartonLevel:ISR': 'on',
+                            'PartonLevel:FSR': 'on',
+                            'PartonLevel:MPI': 'on'
+                        }
+                    },
+                    'simulation': {
+                        'n_events': args.n_events,
+                        'output_file': f'{args.output_dir}/raw_events.h5',
+                        'random_seed': 12345,
+                        'debug_level': 1
+                    },
+                    'jets': {
+                        'algorithm': 'antikt',
+                        'r_parameter': 0.4,
+                        'pt_min': 20.0,
+                        'eta_max': 2.5
+                    }
+                }
             elif args.process == 'zjets':
                 if not ZJETS_AVAILABLE:
-                    raise ImportError("Z+jets generator not available. Please ensure zjets_generator.py is in the examples/simulation/ directory.")
-                # Create temporary config
+                    raise ImportError("Z+jets generator not available.")
                 config_data = {
                     'physics_process': {'process': 'pp -> Z+jets', 'energy': 13000.0, 'parameters': {}},
-                    'simulation': {'n_events': args.n_events, 'output_file': 'temp.h5', 'random_seed': 12345},
+                    'simulation': {'n_events': args.n_events, 'output_file': f'{args.output_dir}/raw_events.h5', 'random_seed': 12345},
                     'jets': {'algorithm': 'antikt', 'r_parameter': 0.4, 'pt_min': 20.0, 'eta_max': 2.5},
                     'z_boson': {'mass': 91.1876, 'width': 2.4952, 'decay_modes': ['ee', 'mumu']}
                 }
-                import yaml
-                config_path = output_dir / 'temp_config.yaml'
-                with open(config_path, 'w') as f:
-                    yaml.dump(config_data, f)
-                
-                generator = ZJetsEventGenerator(str(config_path))
-                particle_data, jet_data = generator.generate_events()
             else:
                 raise ValueError(f"Unsupported process: {args.process}")
+            
+            import yaml
+            config_path = Path(args.output_dir) / 'temp_config.yaml'
+            Path(args.output_dir).mkdir(parents=True, exist_ok=True)
+            with open(config_path, 'w') as f:
+                yaml.dump(config_data, f)
+            config = SimulationConfig(str(config_path))
+        
+        logger.info(f"Generating {config.simulation.n_events} events using Pythia8...")
+        generator = PythiaEventGenerator(config)
+        particle_data, jet_data = generator.generate_events()
         
         logger.info(f"Generated {len(particle_data)} events")
         logger.info(f"Particle data shape: {particle_data.shape}")
