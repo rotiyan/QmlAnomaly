@@ -5,3 +5,6 @@ from .plot import (
     plot_ROC_kfold_mean,
     create_table_for_fixed_TPR,
 )
+
+# Import simulation module
+from . import simulation

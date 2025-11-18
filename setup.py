@@ -36,7 +36,9 @@ setup(
         "qiskit-machine-learning==0.4.0",
         "qiskit-terra==0.20.2",
         "tensorflow>=2.6",
+        "torch>=1.9.0",
         "pylatexenc==2.10",
+        "pyyaml>=6.0",
         "triple_e @ https://github.com/vbelis/triple_e/archive/master.zip"
     ],
     extras_require={
