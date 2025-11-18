@@ -1,0 +1,37 @@
+# Configuration for 100 Z+jets events simulation
+# This file configures the simulation for proton-proton to Z+jets production
+
+# Physics process configuration
+physics_process:
+  process: "pp -> Z+jets"  # proton-proton to Z+jets production
+  energy: 13000.0          # Center-of-mass energy in GeV (LHC Run 2)
+  parameters:
+    # Additional parameters for Z+jets
+    "PhaseSpace:pTHatMin": 50.0    # Minimum pT for hard process
+    "PhaseSpace:pTHatMax": 2000.0  # Maximum pT for hard process
+    "PartonLevel:ISR": "on"        # Initial state radiation
+    "PartonLevel:FSR": "on"        # Final state radiation
+    "PartonLevel:MPI": "on"        # Multiple parton interactions
+    "WeakSingleBoson:ffbar2gmZ": "on"  # Z boson production
+    "23:onMode": "off"             # Turn off Z decay modes
+    "23:onIfAny": "11 13"          # Only allow Z -> e+e- and Z -> μ+μ-
+
+# Simulation settings
+simulation:
+  n_events: 100           # Number of events to generate
+  output_file: "data/zjets_100_events.h5"
+  random_seed: 12345      # Random seed for reproducibility
+  debug_level: 1          # Debug level
+
+# Jet reconstruction settings
+jets:
+  algorithm: "antikt"     # Jet algorithm (antikt, kt, cambridge)
+  r_parameter: 0.4        # Jet radius parameter
+  pt_min: 20.0            # Minimum jet pT in GeV
+  eta_max: 2.5            # Maximum |eta| for jets
+
+# Z boson settings
+z_boson:
+  mass: 91.1876           # Z boson mass in GeV
+  width: 2.4952           # Z boson width in GeV
+  decay_modes: ["ee", "mumu"]  # Allowed decay modes

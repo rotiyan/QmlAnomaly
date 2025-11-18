@@ -1,0 +1,28 @@
+# Configuration for 10 dijet events simulation
+# This file configures Pythia-8 for proton-proton to dijet production
+
+# Physics process configuration
+physics_process:
+  process: "pp -> jj"  # proton-proton to dijet production
+  energy: 13000.0      # Center-of-mass energy in GeV (LHC Run 2)
+  parameters:
+    # Additional Pythia-8 parameters
+    "PhaseSpace:pTHatMin": 50.0    # Minimum pT for hard process
+    "PhaseSpace:pTHatMax": 2000.0  # Maximum pT for hard process
+    "PartonLevel:ISR": "on"        # Initial state radiation
+    "PartonLevel:FSR": "on"        # Final state radiation
+    "PartonLevel:MPI": "on"        # Multiple parton interactions
+
+# Simulation settings
+simulation:
+  n_events: 10         # Number of events to generate
+  output_file: "data/dijet_10_events.h5"
+  random_seed: 12345   # Random seed for reproducibility
+  debug_level: 1       # Pythia debug level (0-10)
+
+# Jet reconstruction settings
+jets:
+  algorithm: "antikt"  # Jet algorithm (antikt, kt, cambridge)
+  r_parameter: 0.4     # Jet radius parameter
+  pt_min: 20.0         # Minimum jet pT in GeV
+  eta_max: 2.5         # Maximum |eta| for jets
