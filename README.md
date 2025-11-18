@@ -107,19 +107,26 @@ python generate_and_compress_events.py \
     --output-dir output/background
 ```
 
-### Step 3: Train Quantum Anomaly Detector
+### Step 3: Train Anomaly Detector
 
 ```bash
-# Train one-class quantum SVM
-python scripts/kernel_machines/train_one_class_qsvm.py \
+# Train one-class SVM (automatically uses quantum if available)
+python train_quantum_anomaly_detector.py \
     --train-file output/signal/events_for_quantum_ml.h5 \
     --test-file output/background/events_for_quantum_ml.h5 \
-    --nqubits 6 \
-    --feature-map ZZFeatureMap \
-    --reps 2 \
-    --backend qasm_simulator \
-    --nu-param 0.05
+    --nu-param 0.05 \
+    --output trained_models/my_model
+
+# Or force classical SVM (recommended for M1/M2 Macs)
+python train_quantum_anomaly_detector.py \
+    --train-file output/signal/events_for_quantum_ml.h5 \
+    --test-file output/background/events_for_quantum_ml.h5 \
+    --classical \
+    --nu-param 0.05 \
+    --output trained_models/classical_model
 ```
+
+**Note**: Qiskit may have architecture issues on M1/M2 Macs. The script automatically detects this and falls back to classical SVM.
 
 ### Step 4: Visualize Results
 
